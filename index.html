@@ -84,7 +84,7 @@
     <p><b>Interaction:</b> Hovering over a station shows its name as listed in the sales, its name on the 2020 metro
     map, the number of sales, the median price per m², the median total price and the share of off-plan sales. Clicking a
     station selects it: the other stations fade, and the selection filters the second view.
-    Double-clicking empty space clears the selection. <span class="todo">[Member 3: what happens in the second view.]</span></p>
+    Clicking anywhere else on the map clears the selection. <span class="todo">[Member 3: what happens in the second view.]</span></p>
     <p><b>Value added:</b> The map shows that property demand follows the metro, but prices along it vary a lot. The busiest stations,
     Burj Khalifa/Dubai Mall (3,862 sales) and Business Bay (3,562), are also among the most expensive at about
     20,000 AED/m², while the Marina-side stations (Dubai Internet City, Nakheel, DAMAC, DMCC) are just as busy but
@@ -265,7 +265,7 @@
       "text": "Sales around each metro station",
       "subtitle": [
         "Circle size = number of sales · colour = median price per m² · grey = fewer than 10 sales",
-        "Click a station to select it. Double-click empty space to clear."
+        "Click a station to select it. Click anywhere else on the map to clear."
       ],
       "anchor": "start"
     },
@@ -353,7 +353,12 @@
           {
             "params": [{
               "name": "station",
-              "select": {"type": "point", "fields": ["metro_clean"], "on": "click", "clear": "dblclick"}
+              "select": {
+                "type": "point", "fields": ["metro_clean"],
+                // Only clicks on a station circle select; a click anywhere else clears the selection
+                "on": "click[event.item && event.item.datum && event.item.datum.station_no]",
+                "clear": "click[!event.item || !event.item.datum || !event.item.datum.station_no]"
+              }
             }],
             "mark": {"type": "circle", "stroke": "#ffffff", "cursor": "pointer", "clip": true},
             "encoding": {
