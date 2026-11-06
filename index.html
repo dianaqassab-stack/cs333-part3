@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CS333 Part 3 – Dubai Real Estate (Interactive)</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; color: #1f2328; max-width: 1100px; margin: 0 auto; padding: 16px; line-height: 1.5; }
+    h2 { margin-top: 2.4rem; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
+    .chart { overflow-x: auto; margin-top: 12px; }
+    .box { background: #f4f6f8; border-left: 4px solid #4c78a8; padding: 10px 14px; margin-top: 12px; }
+    .note { color: #57606a; font-size: .92rem; }
+    table { border-collapse: collapse; margin: 8px 0; font-size: .92rem; }
+    th, td { border: 1px solid #d0d7de; padding: 4px 10px; text-align: left; }
+    th { background: #eef1f4; }
+    td.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .todo { color: #9a6700; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Dubai Land Department transactions: interactive views</h1>
+  <p class="note">CS333 Part 3 (Vega-Lite). Booked presentation slot: <span class="todo">[add booked time here]</span></p>
+
+  <!-- ===================== DATA QUALITY (Member 1) ===================== -->
+  <h2>How we cleaned the data</h2>
+  <p>The file has 89,212 transactions (a 10% sample of Dubai Land Department records). Before building any chart we
+  checked every column. These are the problems we found and what we did about each one. All views on this page use
+  the same rules, so their numbers agree with each other.</p>
+
+  <table>
+    <tr><th>Problem we found</th><th>What we did</th><th class="n">Rows affected</th></tr>
+    <tr><td>Implausible or out-of-range dates: the earliest is 28 Nov 1967, and the file runs to 17 Sep 2026 (a partial month)</td>
+        <td>Kept 1 Jan 2015 to 31 Aug 2026, the same window as Parts 1 and 2. Dates are read in UTC.</td>
+        <td class="n">22,190 removed (21,664 before 2015, 526 after Aug 2026) → <b>67,022 kept</b></td></tr>
+    <tr><td>Mortgage and gift values are not market prices: median 7,804 AED/m² for mortgages and 11,476 for gifts, against 15,114 for sales</td>
+        <td>Price views use <b>Sales only</b>. Mortgages and gifts are kept only for counting transactions.</td>
+        <td class="n">51,339 sales in the window</td></tr>
+    <tr><td>Zero or extreme prices: one sale at 0 AED/m² (a land plot recorded at 14 AED in total), values as low as 2.5 AED/m², and buildings up to 414,000 AED/m²</td>
+        <td>Price views keep sales between <b>1,000 and 100,000 AED/m²</b>. Out of 46,286 unit and villa sales, only 75 fall outside that range.</td>
+        <td class="n">237 sales removed</td></tr>
+    <tr><td>Impossible sizes: 116 units under 15 m², including a "1 B/R" of 0.83 m² and many 8 m² "studios"</td>
+        <td>Price views keep properties of <b>at least 15 m²</b>. A real studio is about 25 m² or more.</td>
+        <td class="n">122 sales removed (both rules together: 356, 0.7% of sales)</td></tr>
+    <tr><td>Missing number of rooms (12,766 rows in the window): mostly land plots (6,934), but also 4,112 villas, 869 units and 851 buildings</td>
+        <td>Shown as <b>"Not stated"</b> instead of dropped, so we don't lose those sales.</td>
+        <td class="n">kept, relabelled</td></tr>
+    <tr><td>Missing nearest metro station (24,990 rows in the window), and spelling mistakes ("Buj Khalifa…", "Jumeirah Beach Resdency", "Palm Deira Metro Stations")</td>
+        <td>Spellings fixed. Rows with no station are labelled <b>"No station listed"</b> and left out of the station views only. Note that the column also lists Dubai Tram stops (for example Harbour Tower and Mina Seyahi), not only metro stations.</td>
+        <td class="n">5,802 spellings fixed; 24,990 with no station</td></tr>
+    <tr><td>One property usage written in Arabic ("أخرى", which means "Other")</td>
+        <td>Merged into "Other".</td>
+        <td class="n">293 rows</td></tr>
+    <tr><td>Two communities without coordinates (Al Maha, Al Layan1)</td>
+        <td>Kept. They only drop out of point maps.</td>
+        <td class="n">2 rows</td></tr>
+    <tr><td>Missing days: 1,545 of 4,261 days have no transactions. Most are weekends, but 327 are weekdays, mostly in 2015–2019 when volumes were low (this is a 10% sample)</td>
+        <td>Nothing removed. Time views group by month (or longer) so that empty days don't create false drops.</td>
+        <td class="n">none</td></tr>
+    <tr><td>Medians based on very few sales are unreliable (the same finding as Part 2)</td>
+        <td>Any group (community, station, room type) with <b>fewer than 10 sales</b> is greyed out or hidden in price views.</td>
+        <td class="n">depends on the view</td></tr>
+  </table>
+
+  <p class="note">Derived fields we added: <code>year</code>, <code>is_offplan</code> (true or false),
+  <code>size_band</code> (under 50, 50–100, 100–200, 200–500, 500+ m²), <code>price_m</code> (total price in
+  millions of AED), <code>rooms_clean</code>, <code>metro_clean</code> and <code>usage_clean</code>. We checked that
+  <code>meter_sale_price</code> always equals <code>actual_worth ÷ procedure_area</code> (true for every row), so it is
+  safe to use directly as the price per m².</p>
+
+  <!-- ===================== VISUALIZATION 1 (Members 2 + 3) ===================== -->
+  <h2>Visualization 1: Metro stations and prices</h2>
+  <div id="viz1" class="chart"><p class="todo">Members 2 and 3: your spec goes in <code>viz1</code> below.</p></div>
+  <div class="box">
+    <p><b>Encoding:</b> <span class="todo">[Members 2 and 3]</span></p>
+    <p><b>Interaction:</b> <span class="todo">[Members 2 and 3]</span></p>
+    <p><b>Value added:</b> <span class="todo">[Members 2 and 3]</span></p>
+  </div>
+
+  <!-- ===================== VISUALIZATION 2 (Members 4 + 5) ===================== -->
+  <h2>Visualization 2: Size, price and where the deals are</h2>
+  <div id="viz2" class="chart"><p class="todo">Members 4 and 5: your spec goes in <code>viz2</code> below.</p></div>
+  <div class="box">
+    <p><b>Encoding:</b> <span class="todo">[Members 4 and 5]</span></p>
+    <p><b>Interaction:</b> <span class="todo">[Members 4 and 5]</span></p>
+    <p><b>Value added:</b> <span class="todo">[Members 4 and 5]</span></p>
+  </div>
+
+  <script>
+  /* =====================================================================
+     SHARED DATA + CLEANING (Member 1). Everyone uses these. Don't edit them in your own spec.
+
+     HOW TO USE IN YOUR SPEC:
+       "data": DATA,
+       "transform": [...CLEAN, ...your own transforms]          // counting views (all transaction types)
+       "transform": [...CLEAN_SALES, ...your own transforms]    // price views (clean sales only)
+
+     For other files, use the URLs in EXTRA (e.g. "data": {"url": EXTRA.metro, "format": {"type": "json", "property": "features"}}).
+     Fields you can use after CLEAN: every original column, plus
+       year, is_offplan, size_band, price_m, rooms_clean, metro_clean, usage_clean
+     ===================================================================== */
+
+  const BASE = "https://raw.githubusercontent.com/sharios/CS333/main/2026-27/";
+
+  const DATA = {
+    "url": BASE + "Part%202/transactions.csv",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "instance_date": "utc:'%Y-%m-%d'",
+        "meter_sale_price": "number",
+        "actual_worth": "number",
+        "procedure_area": "number",
+        "area_lat": "number",
+        "area_lon": "number",
+        "has_parking": "number",
+        "comm_num": "string"
+      }
+    }
+  };
+
+  const EXTRA = {
+    communities: BASE + "Part%202/dubai.geojson",
+    metro:       BASE + "Part%203/dubai_metro_stations.geojson",
+    pop2018:     BASE + "Part%203/dubai_pop_2018.csv",
+    pop2019:     BASE + "Part%203/dubai_pop_2019.csv",
+    venues:      BASE + "Part%203/dubai_venues.csv",
+    metroVenues: BASE + "Part%203/metro_venues_total.csv"
+  };
+
+  // Rule 1: date window 1 Jan 2015 to 31 Aug 2026 (UTC), plus tidy labels and derived fields.
+  const CLEAN = [
+    {"filter": "datum.instance_date >= utc(2015,0,1) && datum.instance_date < utc(2026,8,1)"},
+    {"calculate": "utcyear(datum.instance_date)", "as": "year"},
+    {"calculate": "datum.reg_type_en === 'Off-Plan Properties'", "as": "is_offplan"},
+    {"calculate": "datum.actual_worth / 1000000", "as": "price_m"},
+    {"calculate": "datum.rooms_en ? datum.rooms_en : 'Not stated'", "as": "rooms_clean"},
+    {"calculate": "datum.property_usage_en === 'أخرى' ? 'Other' : datum.property_usage_en", "as": "usage_clean"},
+    {"calculate":
+      "!datum.nearest_metro_en ? 'No station listed'" +
+      " : datum.nearest_metro_en === 'Buj Khalifa Dubai Mall Metro Station' ? 'Burj Khalifa Dubai Mall Metro Station'" +
+      " : datum.nearest_metro_en === 'Jumeirah Beach Resdency' ? 'Jumeirah Beach Residency'" +
+      " : datum.nearest_metro_en === 'Palm Deira Metro Stations' ? 'Palm Deira Metro Station'" +
+      " : datum.nearest_metro_en",
+     "as": "metro_clean"},
+    {"calculate":
+      "datum.procedure_area < 50 ? 'Under 50 m²'" +
+      " : datum.procedure_area < 100 ? '50–100 m²'" +
+      " : datum.procedure_area < 200 ? '100–200 m²'" +
+      " : datum.procedure_area < 500 ? '200–500 m²' : '500+ m²'",
+     "as": "size_band"}
+  ];
+
+  // Rules 2–4: sales only, price between 1,000 and 100,000 AED/m², size at least 15 m².
+  const CLEAN_SALES = [
+    ...CLEAN,
+    {"filter": "datum.trans_group_en === 'Sales'"},
+    {"filter": "datum.meter_sale_price >= 1000 && datum.meter_sale_price <= 100000"},
+    {"filter": "datum.procedure_area >= 15"}
+  ];
+
+  // Rule 5 (minimum group size) is applied inside each view, because it depends on how the view groups the data.
+  const MIN_SALES = 10;
+
+  // Use these so every view looks the same.
+  const COLORS = {
+    offplan:  "#d95f02",   // same as Part 2
+    existing: "#1b9e77",   // same as Part 2
+    unreliable: "#a3a3a3"
+  };
+  const SIZE_ORDER = ["Under 50 m²", "50–100 m²", "100–200 m²", "200–500 m²", "500+ m²"];
+  const ROOMS_ORDER = ["Studio", "1 B/R", "2 B/R", "3 B/R", "4 B/R", "5 B/R", "6 B/R", "7 B/R", "PENTHOUSE", "Not stated"];
+
+  /* =====================================================================
+     VISUALIZATION SPECS: each pair replaces null with its spec object.
+     ===================================================================== */
+  const viz1 = null;   // Members 2 + 3: metro map + linked rooms view
+  const viz2 = null;   // Members 4 + 5: scatter + linked communities view
+
+  const OPTS = {"actions": {"export": true, "source": true, "compiled": false, "editor": true}};
+  if (viz1) vegaEmbed('#viz1', viz1, OPTS).catch(err => document.getElementById('viz1').textContent = 'Viz 1 error: ' + err);
+  if (viz2) vegaEmbed('#viz2', viz2, OPTS).catch(err => document.getElementById('viz2').textContent = 'Viz 2 error: ' + err);
+  </script>
+</body>
+</html>
