@@ -23,6 +23,7 @@
 <body>
   <h1>Dubai Land Department transactions: interactive views</h1>
   <p class="note">CS333 Part 3 (Vega-Lite). Booked presentation slot: <b>Tuesday 24 November 2026, 10:00–10:15 AM</b></p>
+
   <!-- ===================== DATA QUALITY (Member 1) ===================== -->
   <h2>How we cleaned the data</h2>
   <p>The file has 89,212 transactions (a 10% sample of Dubai Land Department records). Before building any chart we
@@ -73,9 +74,28 @@
   <h2>Visualization 1: Metro stations and prices</h2>
   <div id="viz1" class="chart"><p class="todo">Members 2 and 3: your spec goes in <code>viz1</code> below.</p></div>
   <div class="box">
-    <p><b>Encoding:</b> <span class="todo">[Members 2 and 3]</span></p>
-    <p><b>Interaction:</b> <span class="todo">[Members 2 and 3]</span></p>
-    <p><b>Value added:</b> <span class="todo">[Members 2 and 3]</span></p>
+    <p><b>Encoding:</b> The first view is a map of Dubai. Community boundaries form a light grey background,
+    and the metro network is drawn on top as coloured lines (red = Red Line, green = Green Line, light red = Route 2020
+    to Expo). Every station is a small white dot. On top of each station that has sales, a circle shows the clean sales
+    whose nearest station it is: <b>circle area = number of sales</b> and <b>circle colour = median price per m²</b>, on a
+    single-hue blue scale from light (cheap) to dark (expensive). Stations with fewer than 10 sales are grey, because
+    their median is not reliable. The names of the busiest stations (1,500+ sales) are written next to their circles.
+    <span class="todo">[Member 3: add the second view here.]</span></p>
+    <p><b>Interaction:</b> Hovering over a station shows its name as listed in the sales, its name on the 2020 metro
+    map, the number of sales, the median price per m², the median total price and the share of off-plan sales. Clicking a
+    station selects it: the other stations fade, and the selection filters the second view.
+    Double-clicking empty space clears the selection. <span class="todo">[Member 3: what happens in the second view.]</span></p>
+    <p><b>Value added:</b> The map shows that property demand follows the metro, but prices along it vary a lot. The busiest stations,
+    Burj Khalifa/Dubai Mall (3,862 sales) and Business Bay (3,562), are also among the most expensive at about
+    20,000 AED/m², while the Marina-side stations (Dubai Internet City, Nakheel, DAMAC, DMCC) are just as busy but
+    cheaper, at about 12,000–14,000 AED/m². At the ends of the lines, Rashidiya (about 7,400 AED/m²) and the Green Line's
+    Etisalat and Al Qiyadah stations (about 3,500 AED/m²) are the cheapest ways to live near a station, which helps buyers on a budget.
+    The old Deira and Bur Dubai stations have very few sales in this sample, even though they are central. That is useful for
+    city planners. <span class="todo">[Member 3: what the second view adds.]</span></p>
+    <p class="note">Station matching: 45 of the metro stations link to 27,117 clean sales. Station names in the
+    transactions were matched to the 2020 metro map by hand, because several stations have been renamed (for example Sharaf DG
+    became Mashreq, and Jumeirah Lakes Towers became DMCC). 3,889 sales list a Dubai Tram stop or "Marina Mall" as their
+    nearest station, so they are left off this metro map. 19,977 sales list no station at all.</p>
   </div>
 
   <!-- ===================== VISUALIZATION 2 (Members 4 + 5) ===================== -->
@@ -175,7 +195,223 @@
   /* =====================================================================
      VISUALIZATION SPECS: each pair replaces null with its spec object.
      ===================================================================== */
-  const viz1 = null;   // Members 2 + 3: metro map + linked rooms view
+  /* ---------------------------------------------------------------------
+     VIZ 1, VIEW A: METRO STATION MAP (Member 2)
+
+     The transactions name the nearest station the way the Land Department wrote it
+     (e.g. "Sharaf Dg Metro Station"), but the course's metro file uses the 2020 map names
+     and codes (e.g. R33 "Mashreq"). Several stations were renamed, so we matched them by
+     hand with this table (transaction name → station code in dubai_metro_stations.geojson).
+       Renamed stations: Sharaf DG → Mashreq (R33), First Abu Dhabi Bank → FGB (R31),
+       Jumeirah Lakes Towers → DMCC (R37), Damac Properties → DAMAC (R36),
+       Palm Deira → Gold Souq (G22), Healthcare City → Dubai Health Care (G28),
+       Trade Centre → World Trade Centre (R22), ADCB → Abu Dhabi Commercial Bank (R20).
+     Not matched on purpose: Dubai Tram stops (Jumeirah Beach Residency, Harbour Tower,
+     Palm Jumeirah, Mina Seyahi, Marina Towers, Dubai Marina, Al Sufouh, Knowledge Village,
+     Media City) and "Marina Mall Metro Station", which is not a station on the metro map.
+     --------------------------------------------------------------------- */
+  const STATION_CODES = [
+    {"metro_clean": "ADCB Metro Station", "station_no": "R20"},
+    {"metro_clean": "Abu Baker Al Siddique Metro Station", "station_no": "G18"},
+    {"metro_clean": "Abu Hail Metro Station", "station_no": "G17"},
+    {"metro_clean": "Airport Free Zone", "station_no": "G13"},
+    {"metro_clean": "Airport Terminal 1 Metro Station", "station_no": "R14"},
+    {"metro_clean": "Al Fahidi Metro Station", "station_no": "G25"},
+    {"metro_clean": "Al Ghubaiba Metro Station", "station_no": "G24"},
+    {"metro_clean": "Al Jadaf Metro Station", "station_no": "G29"},
+    {"metro_clean": "Al Jafiliya Metro Station", "station_no": "R21"},
+    {"metro_clean": "Al Nahda Metro Station", "station_no": "G14"},
+    {"metro_clean": "Al Qiyadah Metro Station", "station_no": "G16"},
+    {"metro_clean": "Al Qusais Metro Station", "station_no": "G12"},
+    {"metro_clean": "Al Ras Metro Station", "station_no": "G23"},
+    {"metro_clean": "Al Rigga Metro Station", "station_no": "R17"},
+    {"metro_clean": "Baniyas Square Metro Station", "station_no": "G21"},
+    {"metro_clean": "Burj Khalifa Dubai Mall Metro Station", "station_no": "R25"},
+    {"metro_clean": "Burjuman Metro Station", "station_no": "R19"},
+    {"metro_clean": "Business Bay Metro Station", "station_no": "R26"},
+    {"metro_clean": "Creek Metro Station", "station_no": "G30"},
+    {"metro_clean": "DANUBE Metro Station", "station_no": "R41"},
+    {"metro_clean": "Damac Properties", "station_no": "R36"},
+    {"metro_clean": "Deira City Centre", "station_no": "R16"},
+    {"metro_clean": "Dubai Internet City", "station_no": "R34"},
+    {"metro_clean": "ENERGY Metro Station", "station_no": "R40"},
+    {"metro_clean": "Emirates Metro Station", "station_no": "R12"},
+    {"metro_clean": "Emirates Towers Metro Station", "station_no": "R23"},
+    {"metro_clean": "Etisalat Metro Station", "station_no": "G11"},
+    {"metro_clean": "Financial Centre", "station_no": "R24"},
+    {"metro_clean": "First Abu Dhabi Bank Metro Station", "station_no": "R31"},
+    {"metro_clean": "GGICO Metro Station", "station_no": "R15"},
+    {"metro_clean": "Healthcare City Metro Station", "station_no": "G28"},
+    {"metro_clean": "Ibn Battuta Metro Station", "station_no": "R39"},
+    {"metro_clean": "Jumeirah Lakes Towers", "station_no": "R37"},
+    {"metro_clean": "Nakheel Metro Station", "station_no": "R35"},
+    {"metro_clean": "Noor Bank Metro Station", "station_no": "R29"},
+    {"metro_clean": "Oud Metha Metro Station", "station_no": "G27"},
+    {"metro_clean": "Palm Deira Metro Station", "station_no": "G22"},
+    {"metro_clean": "Rashidiya Metro Station", "station_no": "R11"},
+    {"metro_clean": "STADIUM Metro Station", "station_no": "G15"},
+    {"metro_clean": "Salah Al Din Metro Station", "station_no": "G19"},
+    {"metro_clean": "Sharaf Dg Metro Station", "station_no": "R33"},
+    {"metro_clean": "Terminal 3", "station_no": "R13"},
+    {"metro_clean": "Trade Centre Metro Station", "station_no": "R22"},
+    {"metro_clean": "UAE Exchange Metro Station", "station_no": "R42"},
+    {"metro_clean": "Union Metro Station", "station_no": "R18"}
+  ];
+
+  const METRO_FEATURES = {"url": EXTRA.metro, "format": {"type": "json", "property": "features"}};
+
+  const VIZ1_MAP = {
+    "title": {
+      "text": "Sales around each metro station",
+      "subtitle": [
+        "Circle size = number of sales · colour = median price per m² · grey = fewer than 10 sales",
+        "Click a station to select it. Double-click empty space to clear."
+      ],
+      "anchor": "start"
+    },
+    "width": 620,
+    "height": 540,
+    "projection": {
+      "type": "mercator",
+      "fit": {"type": "Feature", "properties": {},
+              "geometry": {"type": "MultiPoint", "coordinates": [[55.03, 24.94], [55.44, 25.31]]}}
+    },
+    "layer": [
+      // 1. Community outlines, as a quiet background
+      {
+        "data": {"url": EXTRA.communities, "format": {"type": "json", "property": "features"}},
+        "mark": {"type": "geoshape", "fill": "#f1f3f5", "stroke": "#ffffff", "strokeWidth": 0.7, "clip": true}
+      },
+      // 2. Metro lines, drawn by joining the stations in order of their code
+      {
+        "data": METRO_FEATURES,
+        "transform": [
+          {"calculate": "datum.properties.STATION_NO", "as": "code"},
+          {"calculate": "datum.geometry.coordinates[0]", "as": "lon"},
+          {"calculate": "datum.geometry.coordinates[1]", "as": "lat"},
+          {"calculate": "datum.code === 'R38' ? ['Red Line', 'Route 2020 (Expo)']" +
+                        " : datum.code[0] === 'G' ? ['Green Line']" +
+                        " : (datum.code === 'E07' || toNumber(substring(datum.code, 1)) >= 70) ? ['Route 2020 (Expo)']" +
+                        " : ['Red Line']", "as": "line_name"},
+          {"flatten": ["line_name"]},
+          {"calculate": "datum.code === 'E07' ? 99 : toNumber(substring(datum.code, 1))", "as": "seq"}
+        ],
+        "mark": {"type": "line", "strokeWidth": 3, "strokeCap": "round", "strokeJoin": "round", "clip": true},
+        "encoding": {
+          "longitude": {"field": "lon", "type": "quantitative"},
+          "latitude": {"field": "lat", "type": "quantitative"},
+          "order": {"field": "seq", "type": "quantitative"},
+          "detail": {"field": "line_name"},
+          "stroke": {
+            "field": "line_name", "type": "nominal", "title": "Metro line",
+            "scale": {"domain": ["Red Line", "Green Line", "Route 2020 (Expo)"],
+                      "range": ["#e8898b", "#7cc49a", "#f2b8b9"]},
+            "legend": {"orient": "none", "legendX": 470, "legendY": 440}
+          }
+        }
+      },
+      // 3. Every station as a small white dot (so stations with no sales are still visible)
+      {
+        "data": METRO_FEATURES,
+        "transform": [
+          {"calculate": "datum.geometry.coordinates[0]", "as": "lon"},
+          {"calculate": "datum.geometry.coordinates[1]", "as": "lat"},
+          {"calculate": "datum.properties.STATION_NAME", "as": "station_2020"}
+        ],
+        "mark": {"type": "point", "filled": true, "fill": "#ffffff", "stroke": "#8c959f", "strokeWidth": 1, "size": 22, "clip": true},
+        "encoding": {
+          "longitude": {"field": "lon", "type": "quantitative"},
+          "latitude": {"field": "lat", "type": "quantitative"},
+          "tooltip": [{"field": "station_2020", "title": "Station (2020 map name)"}]
+        }
+      },
+      // 4. Sales per station: circle size = sales, colour = median price per m²
+      {
+        "data": DATA,
+        "transform": [
+          ...CLEAN_SALES,
+          {"filter": "datum.metro_clean !== 'No station listed'"},
+          {"lookup": "metro_clean",
+           "from": {"data": {"values": STATION_CODES}, "key": "metro_clean", "fields": ["station_no"]}},
+          {"filter": "isValid(datum.station_no)"},
+          {"calculate": "datum.is_offplan ? 1 : 0", "as": "offplan_num"},
+          {"aggregate": [
+             {"op": "count", "as": "sales"},
+             {"op": "median", "field": "meter_sale_price", "as": "median_price"},
+             {"op": "median", "field": "actual_worth", "as": "median_worth"},
+             {"op": "mean", "field": "offplan_num", "as": "offplan_share"}
+           ],
+           "groupby": ["metro_clean", "station_no"]},
+          {"lookup": "station_no",
+           "from": {"data": METRO_FEATURES, "key": "properties.STATION_NO"}, "as": "geo"},
+          {"calculate": "datum.geo.geometry.coordinates[0]", "as": "lon"},
+          {"calculate": "datum.geo.geometry.coordinates[1]", "as": "lat"},
+          {"calculate": "datum.geo.properties.STATION_NAME", "as": "station_2020"},
+          {"calculate": "replace(datum.metro_clean, ' Metro Station', '')", "as": "label"}
+        ],
+        "layer": [
+          {
+            "params": [{
+              "name": "station",
+              "select": {"type": "point", "fields": ["metro_clean"], "on": "click", "clear": "dblclick"}
+            }],
+            "mark": {"type": "circle", "stroke": "#ffffff", "cursor": "pointer", "clip": true},
+            "encoding": {
+              "longitude": {"field": "lon", "type": "quantitative"},
+              "latitude": {"field": "lat", "type": "quantitative"},
+              "size": {
+                "field": "sales", "type": "quantitative", "title": "Number of sales",
+                "scale": {"range": [40, 1400]},
+                "legend": {"orient": "none", "legendX": 175, "legendY": 10, "values": [100, 1000, 2000, 4000],
+                           "labelExpr": "format(datum.value, ',')"}
+              },
+              "color": {
+                "condition": {"test": "datum.sales < " + MIN_SALES, "value": COLORS.unreliable},
+                "field": "median_price", "type": "quantitative", "title": "Median AED/m²",
+                "scale": {"scheme": "blues", "domain": [5000, 30000], "clamp": true},
+                "legend": {"orient": "none", "legendX": 10, "legendY": 10, "labelExpr": "format(datum.value, ',')", "gradientLength": 140}
+              },
+              "opacity": {"condition": {"param": "station", "value": 0.95}, "value": 0.25},
+              "strokeWidth": {"condition": {"param": "station", "empty": false, "value": 3}, "value": 1},
+              "order": {"field": "sales", "sort": "descending"},
+              "tooltip": [
+                {"field": "label", "title": "Station (as listed in sales)"},
+                {"field": "station_2020", "title": "Name on 2020 metro map"},
+                {"field": "sales", "title": "Sales (2015 – Aug 2026)", "format": ","},
+                {"field": "median_price", "title": "Median price per m² (AED)", "format": ",.0f"},
+                {"field": "median_worth", "title": "Median sale price (AED)", "format": ",.0f"},
+                {"field": "offplan_share", "title": "Off-plan share", "format": ".0%"}
+              ]
+            }
+          },
+          // Names for the busiest stations only, so labels don't pile up
+          {
+            "transform": [{"filter": "datum.sales >= 1500"}],
+            "mark": {"type": "text", "align": "left", "dx": 14, "dy": -2, "fontSize": 10.5, "color": "#424a53", "clip": true},
+            "encoding": {
+              "longitude": {"field": "lon", "type": "quantitative"},
+              "latitude": {"field": "lat", "type": "quantitative"},
+              "text": {"field": "label"}
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  /* VIZ 1, VIEW B (Member 3): replace null with your view.
+     To react to the map, filter with the shared selection:
+       {"filter": {"param": "station"}}
+     and use the same field the map selects on: metro_clean. */
+  const VIZ1_DETAIL = null;
+
+  const viz1 = {
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "hconcat": [VIZ1_MAP, VIZ1_DETAIL].filter(Boolean),
+    "spacing": 30,
+    "config": {"view": {"stroke": null}, "legend": {"labelFontSize": 11, "titleFontSize": 11}}
+  };
+
   const viz2 = null;   // Members 4 + 5: scatter + linked communities view
 
   const OPTS = {"actions": {"export": true, "source": true, "compiled": false, "editor": true}};
