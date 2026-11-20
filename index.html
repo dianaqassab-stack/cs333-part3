@@ -102,9 +102,14 @@
   <h2>Visualization 2: Size, price and where the deals are</h2>
   <div id="viz2" class="chart"><p class="todo">Members 4 and 5: your spec goes in <code>viz2</code> below.</p></div>
   <div class="box">
-    <p><b>Encoding:</b> <span class="todo">[Members 4 and 5]</span></p>
-    <p><b>Interaction:</b> <span class="todo">[Members 4 and 5]</span></p>
-    <p><b>Value added:</b> <span class="todo">[Members 4 and 5]</span></p>
+    <p><b>Encoding:</b> The first view is a scatter plot where each dot is one sale. Size in m² is on the x axis
+    (log scale), price per m² in AED is on the y axis (log scale), and colour shows off-plan (orange) or existing (green).
+    <span class="todo">[Member 5: add the second view here.]</span></p>
+    <p><b>Interaction:</b> The user drags a box on the scatter plot to select an area. Dots outside the box fade,
+    and the selection filters the communities bar chart next to it. <span class="todo">[Member 5: what happens in the second view.]</span></p>
+    <p><b>Value added:</b> It shows how price per m² changes with property size, and whether off-plan sales are
+    priced differently from existing ones. An investor can select one region of the chart and see which communities it
+    comes from. <span class="todo">[Member 5: what the second view adds.]</span></p>
   </div>
 
   <script>
@@ -417,7 +422,69 @@
     "config": {"view": {"stroke": null}, "legend": {"labelFontSize": 11, "titleFontSize": 11}}
   };
 
-  const viz2 = null;   // Members 4 + 5: scatter + linked communities view
+  /* ---------------------------------------------------------------------
+     VIZ 2, VIEW A: SIZE VS PRICE SCATTER (Member 4)
+     Each dot is one clean sale. Dragging a box creates the selection "brush",
+     which Member 5's view uses to filter itself.
+     --------------------------------------------------------------------- */
+  const VIZ2_SCATTER = {
+    "title": {
+      "text": "Size vs price per m²",
+      "subtitle": "Each dot is one sale. Drag a box to select an area.",
+      "anchor": "start"
+    },
+    "width": 520,
+    "height": 400,
+    "data": DATA,
+    "transform": [
+      ...CLEAN_SALES,   // sales only, 1,000–100,000 AED/m², at least 15 m², 2015 to Aug 2026
+      {"calculate": "datum.is_offplan ? 'Off-plan' : 'Existing'", "as": "property_status"}
+      // If the chart is slow, add this as the last transform:  ,{"sample": 10000}
+    ],
+    "params": [
+      // The brush. Member 5 filters with {"filter": {"param": "brush"}}
+      {"name": "brush", "select": {"type": "interval", "encodings": ["x", "y"]}}
+    ],
+    "mark": {"type": "circle", "size": 22},
+    "encoding": {
+      "x": {
+        "field": "procedure_area", "type": "quantitative",
+        "title": "Size (m²)",
+        "scale": {"type": "log", "domain": [10, 200000]},
+        "axis": {"values": [20, 50, 100, 200, 500, 1000, 5000, 20000, 100000], "format": ","}
+      },
+      "y": {
+        "field": "meter_sale_price", "type": "quantitative",
+        "title": "Price per m² (AED)", "scale": {"type": "log"}
+      },
+      "color": {
+        "field": "property_status", "type": "nominal", "title": "Property status",
+        "scale": {"domain": ["Off-plan", "Existing"], "range": [COLORS.offplan, COLORS.existing]}
+      },
+      // Dots inside the brush stay strong, the others fade
+      "opacity": {"condition": {"param": "brush", "value": 0.7}, "value": 0.12},
+      "tooltip": [
+        {"field": "procedure_area", "type": "quantitative", "title": "Size (m²)", "format": ",.0f"},
+        {"field": "meter_sale_price", "type": "quantitative", "title": "Price per m² (AED)", "format": ",.0f"},
+        {"field": "price_m", "type": "quantitative", "title": "Total price (million AED)", "format": ",.2f"},
+        {"field": "property_status", "type": "nominal", "title": "Status"},
+        {"field": "rooms_clean", "type": "nominal", "title": "Rooms"}
+      ]
+    }
+  };
+
+  /* VIZ 2, VIEW B (Member 5): replace null with your view.
+     To react to the scatter, filter with the shared selection:
+       {"filter": {"param": "brush"}}
+     Put "data": DATA and ...CLEAN_SALES at the start, like the scatter, so the brush matches. */
+  const VIZ2_BARS = null;
+
+  const viz2 = {
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+    "hconcat": [VIZ2_SCATTER, VIZ2_BARS].filter(Boolean),
+    "spacing": 30,
+    "config": {"view": {"stroke": null}, "legend": {"labelFontSize": 11, "titleFontSize": 11}}
+  };
 
   const OPTS = {"actions": {"export": true, "source": true, "compiled": false, "editor": true}};
   if (viz1) vegaEmbed('#viz1', viz1, OPTS).catch(err => document.getElementById('viz1').textContent = 'Viz 1 error: ' + err);
