@@ -473,11 +473,48 @@
     }
   };
 
-  /* VIZ 2, VIEW B (Member 5): replace null with your view.
-     To react to the scatter, filter with the shared selection:
-       {"filter": {"param": "brush"}}
-     Put "data": DATA and ...CLEAN_SALES at the start, like the scatter, so the brush matches. */
-  const VIZ2_BARS = null;
+const COMMUNITY_FEATURES = {"url": EXTRA.communities, "format": {"type": "json", "property": "features"}};
+
+const VIZ2_BARS = {
+  "title": {
+    "text": "Top 10 communities in the selected area",
+    "subtitle": "Bar length = number of sales · colour = median price per m² · grey = fewer than 10 sales",
+    "anchor": "start"
+  },
+  "width": 280,
+  "data": DATA,
+  "transform": [
+    ...CLEAN_SALES,
+    {"filter": {"param": "brush"}},
+    {"aggregate": [
+      {"op": "count", "as": "n_sales"},
+      {"op": "median", "field": "meter_sale_price", "as": "median_price"}
+    ], "groupby": ["comm_num"]},
+    {"window": [{"op": "rank", "as": "rnk"}],
+     "sort": [{"field": "n_sales", "order": "descending"}]},
+    {"filter": "datum.rnk <= 10"},
+    {"lookup": "comm_num",
+     "from": {"data": COMMUNITY_FEATURES, "key": "properties.COMM_NUM", "fields": ["properties.CNAME_E"]},
+     "as": ["community"],
+     "default": "Unknown"}
+  ],
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "community", "type": "nominal", "sort": "-x", "title": null},
+    "x": {"field": "n_sales", "type": "quantitative", "title": "Sales in selected area"},
+    "color": {
+      "condition": {"test": "datum.n_sales < " + MIN_SALES, "value": COLORS.unreliable},
+      "field": "median_price", "type": "quantitative", "title": "Median AED/m²",
+      "scale": {"scheme": "blues", "domain": [5000, 30000], "clamp": true},
+      "legend": {"labelExpr": "format(datum.value, ',')"}
+    },
+    "tooltip": [
+      {"field": "community", "title": "Community"},
+      {"field": "n_sales", "title": "Sales", "format": ","},
+      {"field": "median_price", "title": "Median AED/m²", "format": ",.0f"}
+    ]
+  }
+};
 
   const viz2 = {
     "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
