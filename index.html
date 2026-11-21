@@ -22,7 +22,7 @@
 </head>
 <body>
   <h1>Dubai Land Department transactions: interactive views</h1>
-  <p class="note">CS333 Part 3 (Vega-Lite). Booked presentation slot: <b>Tuesday 24 November 2026, 10:00–10:15 AM</b></p>
+  
 
   <!-- ===================== DATA QUALITY (Member 1) ===================== -->
   <h2>How we cleaned the data</h2>
@@ -105,12 +105,12 @@
   <div class="box">
     <p><b>Encoding:</b> The first view is a scatter plot where each dot is one sale. To keep it fast, it draws a random 10,000 of the 50,983 clean sales; the bar chart next to it still counts all of them. Size in m² is on the x axis
     (log scale), price per m² in AED is on the y axis (log scale), and colour shows off-plan (orange) or existing (green).
-    <span class="todo">[Member 5: add the second view here.]</span></p>
+    The second view is a horizontal bar chart of the 10 communities with the most sales inside the selected area. Bar length is the number of sales, and bar colour is the median price per m², on the same blue scale as the metro map. Bars based on fewer than 10 sales are grey, because their median is not reliable. Community names come from the Dubai Municipality boundaries file (<code>dubai.geojson</code>), linked to the sales through the community number.</p>
     <p><b>Interaction:</b> The user drags a box on the scatter plot to select an area. Dots outside the box fade,
-    and the selection filters the communities bar chart next to it. <span class="todo">[Member 5: what happens in the second view.]</span></p>
+    and the selection filters the communities bar chart next to it. The bars update as the box is dragged or moved. With no box drawn, they show the top 10 communities overall. Hovering over a bar shows the community name, its number of sales and its median price per m².</p>
     <p><b>Value added:</b> It shows how price per m² changes with property size, and whether off-plan sales are
     priced differently from existing ones. An investor can select one region of the chart and see which communities it
-    comes from. <span class="todo">[Member 5: what the second view adds.]</span></p>
+    comes from. The bar chart shows which communities hold the deals for a chosen size and price range. For example, a box around large, cheap properties shows where they are concentrated, and a box around small, expensive ones shows where the premium market is. This helps buyers and investors target areas, and shows planners where activity is concentrated.</p>
   </div>
 
   <script>
