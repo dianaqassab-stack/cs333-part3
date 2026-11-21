@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@6"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@7"></script>
   <style>
-    body { font-family: system-ui, sans-serif; color: #1f2328; max-width: 1100px; margin: 0 auto; padding: 16px; line-height: 1.5; }
+    body { font-family: system-ui, sans-serif; color: #1f2328; max-width: 1240px; margin: 0 auto; padding: 16px; line-height: 1.5; }
     h2 { margin-top: 2.4rem; border-bottom: 1px solid #ddd; padding-bottom: .3rem; }
     .chart { overflow-x: auto; margin-top: 12px; }
     .box { background: #f4f6f8; border-left: 4px solid #4c78a8; padding: 10px 14px; margin-top: 12px; }
@@ -67,12 +67,13 @@
   <p class="note">Derived fields we added: <code>year</code>, <code>is_offplan</code> (true or false),
   <code>size_band</code> (under 50, 50–100, 100–200, 200–500, 500+ m²), <code>price_m</code> (total price in
   millions of AED), <code>rooms_clean</code>, <code>metro_clean</code> and <code>usage_clean</code>. We checked that
-  <code>meter_sale_price</code> always equals <code>actual_worth ÷ procedure_area</code> (true for every row), so it is
-  safe to use directly as the price per m².</p>
+  <code>meter_sale_price</code> always equals <code>actual_worth ÷ procedure_area</code> (true for every row, apart from rounding to 2 decimals), so it is
+  safe to use directly as the price per m². The code for every check in this table is in our
+  <a href="https://github.com/dianaqassab-stack/cs333-part3/blob/main/data_quality_checks.ipynb">data quality notebook</a>.</p>
 
   <!-- ===================== VISUALIZATION 1 (Members 2 + 3) ===================== -->
   <h2>Visualization 1: Metro stations and prices</h2>
-  <div id="viz1" class="chart"><p class="todo">Members 2 and 3: your spec goes in <code>viz1</code> below.</p></div>
+  <div id="viz1" class="chart"><p class="note">Loading chart…</p></div>
   <div class="box">
     <p><b>Encoding:</b> The first view is a map of Dubai. Community boundaries form a light grey background,
     and the metro network is drawn on top as coloured lines (red = Red Line, green = Green Line, light red = Route 2020
@@ -80,18 +81,18 @@
     whose nearest station it is: <b>circle area = number of sales</b> and <b>circle colour = median price per m²</b>, on a
     single-hue blue scale from light (cheap) to dark (expensive). Stations with fewer than 10 sales are grey, because
     their median is not reliable. The names of the busiest stations (1,500+ sales) are written next to their circles.
-    <span class="todo">[Member 3: add the second view here.]</span></p>
+    The second view has two linked parts. The top part is a <b>box plot of price per m² for each number of rooms</b> (Studio to 5 B/R), with off-plan sales (orange) and existing sales (green) side by side, using the same clean sales as the map. Each box shows the middle 50% of prices, the white line is the median, the whiskers reach 1.5 times the box height, and the dots are outliers. Groups with fewer than 10 sales are grey, because their median is not reliable. The bottom part is a <b>bar chart of the venues around the station</b>, by category (food, shops, nightlife and so on), from the course file <code>metro_venues_total.csv</code>, linked to the sales through the station code.</p>
     <p><b>Interaction:</b> Hovering over a station shows its name as listed in the sales, its name on the 2020 metro
     map, the number of sales, the median price per m², the median total price and the share of off-plan sales. Clicking a
     station selects it: the other stations fade, and the selection filters the second view.
-    Clicking anywhere else on the map clears the selection. <span class="todo">[Member 3: what happens in the second view.]</span></p>
+    Clicking anywhere else on the map clears the selection. When a station is clicked on the map, both parts of the second view show only that station: the box plot shows the prices of the sales near it, the bar chart shows the venues around it, and both titles change to the station's name. When the selection is cleared, the box plot shows all metro stations and the bar chart shows the average station.</p>
     <p><b>Value added:</b> The map shows that property demand follows the metro, but prices along it vary a lot. The busiest stations,
     Burj Khalifa/Dubai Mall (3,862 sales) and Business Bay (3,562), are also among the most expensive at about
     20,000 AED/m², while the Marina-side stations (Dubai Internet City, Nakheel, DAMAC, DMCC) are just as busy but
     cheaper, at about 12,000–14,000 AED/m². At the ends of the lines, Rashidiya (about 7,400 AED/m²) and the Green Line's
     Etisalat and Al Qiyadah stations (about 3,500 AED/m²) are the cheapest ways to live near a station, which helps buyers on a budget.
     The old Deira and Bur Dubai stations have very few sales in this sample, even though they are central. That is useful for
-    city planners. <span class="todo">[Member 3: what the second view adds.]</span></p>
+    city planners. The second view tells a buyer or investor what kind of home they get near a station, and what is around it. Off-plan homes usually cost more per m² than existing ones (about 17,300 against 12,000 AED/m² for a studio), so buying an existing flat is often the cheaper way to live near the metro. Of the busy stations, Business Bay shows the biggest off-plan premium (about 23,900 against 15,000 AED/m²), while near Burj Khalifa existing homes are as expensive as new ones, which suggests an established luxury area. The venues show the trade-off behind low prices: Rashidiya is the cheapest busy station but has only about 65 venues around it, against about 450 near Burj Khalifa and DAMAC and about 230 at an average station.</p>
     <p class="note">Station matching: 45 of the metro stations link to 27,117 clean sales. Station names in the
     transactions were matched to the 2020 metro map by hand, because several stations have been renamed (for example Sharaf DG
     became Mashreq, and Jumeirah Lakes Towers became DMCC). 3,889 sales list a Dubai Tram stop or "Marina Mall" as their
@@ -100,7 +101,7 @@
 
   <!-- ===================== VISUALIZATION 2 (Members 4 + 5) ===================== -->
   <h2>Visualization 2: Size, price and where the deals are</h2>
-  <div id="viz2" class="chart"><p class="todo">Members 4 and 5: your spec goes in <code>viz2</code> below.</p></div>
+  <div id="viz2" class="chart"><p class="note">Loading chart…</p></div>
   <div class="box">
     <p><b>Encoding:</b> The first view is a scatter plot where each dot is one sale. Size in m² is on the x axis
     (log scale), price per m² in AED is on the y axis (log scale), and colour shows off-plan (orange) or existing (green).
@@ -409,11 +410,91 @@
     ]
   };
 
-  /* VIZ 1, VIEW B (Member 3): replace null with your view.
-     To react to the map, filter with the shared selection:
-       {"filter": {"param": "station"}}
-     and use the same field the map selects on: metro_clean. */
-  const VIZ1_DETAIL = null;
+  /* =====================================================================
+     VIZ 1, VIEW B (Member 3): what you get near the station clicked on the map
+       Top:    price per m² for each number of rooms, off-plan and existing side by side
+       Bottom: venues around the station (Foursquare, about 2020), by category
+     Both parts react to the map's "station" selection (field metro_clean).
+     With nothing selected they show all metro stations on the map.
+     ===================================================================== */
+  const ROOM_TYPES = ROOMS_ORDER.slice(0, 6);   // Studio to 5 B/R. 6 B/R and Penthouse have under 20 sales in total.
+
+  // Station name for the titles: the clicked station, or "all metro stations"
+  const STATION_NAME = "isValid(station) && isValid(station.metro_clean) ? replace(station.metro_clean[0], ' Metro Station', '') : ''";
+
+  const VIZ1_DETAIL = {
+    "vconcat": [
+      // ---- Part 1: price per m² by rooms, off-plan vs existing ----
+      {
+        "title": {
+          "text": {"expr": "(" + STATION_NAME + ") ? 'Prices near ' + (" + STATION_NAME + ") : 'Prices near all metro stations'"},
+          "subtitle": "Price per m² by number of rooms · grey = fewer than 10 sales",
+          "anchor": "start"
+        },
+        "width": 400,
+        "height": 250,
+        "data": DATA,
+        "transform": [
+          ...CLEAN_SALES,
+          {"filter": "datum.metro_clean !== 'No station listed'"},
+          // Same station matching as the map, so both views use exactly the same sales
+          {"lookup": "metro_clean",
+           "from": {"data": {"values": STATION_CODES}, "key": "metro_clean", "fields": ["station_no"]}},
+          {"filter": "isValid(datum.station_no)"},
+          {"filter": {"param": "station"}},
+          {"filter": {"field": "rooms_clean", "oneOf": ROOM_TYPES}},
+          {"calculate": "datum.is_offplan ? 'Off-plan' : 'Existing'", "as": "status"},
+          {"joinaggregate": [{"op": "count", "as": "group_sales"}], "groupby": ["rooms_clean", "status"]},
+          {"calculate": "datum.group_sales < " + MIN_SALES + " ? 'Fewer than 10 sales' : datum.status", "as": "colour_group"}
+        ],
+        "mark": {"type": "boxplot", "extent": 1.5, "size": 14,
+                 "median": {"color": "#ffffff", "strokeWidth": 2},
+                 "outliers": {"size": 8, "opacity": 0.3}},
+        "encoding": {
+          "x": {"field": "rooms_clean", "type": "ordinal", "sort": ROOM_TYPES, "title": "Number of rooms",
+                "axis": {"labelAngle": 0}},
+          "xOffset": {"field": "status", "type": "nominal", "sort": ["Off-plan", "Existing"]},
+          "y": {"field": "meter_sale_price", "type": "quantitative", "title": "Price per m² (AED)",
+                "axis": {"format": ",.0f"}},
+          "color": {"field": "colour_group", "type": "nominal", "title": null,
+                    "scale": {"domain": ["Off-plan", "Existing", "Fewer than 10 sales"],
+                              "range": [COLORS.offplan, COLORS.existing, COLORS.unreliable]},
+                    "legend": {"orient": "top", "direction": "horizontal"}}
+        }
+      },
+      // ---- Part 2: venues around the station, from metro_venues_total.csv ----
+      {
+        "title": {
+          "text": {"expr": "(" + STATION_NAME + ") ? 'What is around ' + (" + STATION_NAME + ") : 'What is around an average metro station'"},
+          "subtitle": "Venues within walking distance, by category (Foursquare, about 2020)",
+          "anchor": "start"
+        },
+        "width": 400,
+        "height": 170,
+        "data": {"url": EXTRA.metroVenues, "format": {"type": "csv", "parse": {"venues": "number"}}},
+        "transform": [
+          // Link each venue row to the station name used in the sales, through the station code
+          {"lookup": "station_no",
+           "from": {"data": {"values": STATION_CODES}, "key": "station_no", "fields": ["metro_clean"]}},
+          {"filter": "isValid(datum.metro_clean)"},
+          {"filter": {"param": "station"}},
+          // One station selected: its own counts. Nothing selected: the average station.
+          {"aggregate": [{"op": "mean", "field": "venues", "as": "venues"}], "groupby": ["category_name"]}
+        ],
+        "mark": {"type": "bar", "color": "#4c78a8", "cornerRadiusEnd": 2},
+        "encoding": {
+          "y": {"field": "category_name", "type": "nominal", "sort": "-x", "title": null},
+          "x": {"field": "venues", "type": "quantitative", "title": "Number of venues"},
+          "tooltip": [
+            {"field": "category_name", "title": "Category"},
+            {"field": "venues", "title": "Venues", "format": ",.0f"}
+          ]
+        }
+      }
+    ],
+    "spacing": 24,
+    "resolve": {"scale": {"color": "independent"}}
+  };
 
   const viz1 = {
     "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
