@@ -103,7 +103,7 @@
   <h2>Visualization 2: Size, price and where the deals are</h2>
   <div id="viz2" class="chart"><p class="note">Loading chart…</p></div>
   <div class="box">
-    <p><b>Encoding:</b> The first view is a scatter plot where each dot is one sale. Size in m² is on the x axis
+    <p><b>Encoding:</b> The first view is a scatter plot where each dot is one sale. To keep it fast, it draws a random 10,000 of the 50,983 clean sales; the bar chart next to it still counts all of them. Size in m² is on the x axis
     (log scale), price per m² in AED is on the y axis (log scale), and colour shows off-plan (orange) or existing (green).
     <span class="todo">[Member 5: add the second view here.]</span></p>
     <p><b>Interaction:</b> The user drags a box on the scatter plot to select an area. Dots outside the box fade,
@@ -511,7 +511,7 @@
   const VIZ2_SCATTER = {
     "title": {
       "text": "Size vs price per m²",
-      "subtitle": "Each dot is one sale. Drag a box to select an area.",
+      "subtitle": ["Each dot is one sale (a random 10,000 of the 50,983 clean sales, so the chart stays fast).", "Drag a box to select an area."],
       "anchor": "start"
     },
     "width": 520,
@@ -519,8 +519,10 @@
     "data": DATA,
     "transform": [
       ...CLEAN_SALES,   // sales only, 1,000–100,000 AED/m², at least 15 m², 2015 to Aug 2026
-      {"calculate": "datum.is_offplan ? 'Off-plan' : 'Existing'", "as": "property_status"}
-      // If the chart is slow, add this as the last transform:  ,{"sample": 10000}
+      {"calculate": "datum.is_offplan ? 'Off-plan' : 'Existing'", "as": "property_status"},
+      // Draw a random 10,000 of the 50,983 clean sales so dragging the box stays smooth.
+      // This only changes how many dots are drawn: the bar chart still counts ALL sales in the box.
+      {"sample": 10000}
     ],
     "params": [
       // The brush. Member 5 filters with {"filter": {"param": "brush"}}
